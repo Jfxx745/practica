@@ -7,7 +7,7 @@ USUARIO_CORRECTO = "Javier"
 PASSWORD_CORRECTO = "Javier12345"
 
 # ==========================
-# LOGIN (ÚNICA VENTANA INICIAL)
+# LOGIN
 # ==========================
 
 def verificar_login():
@@ -15,11 +15,10 @@ def verificar_login():
     password = entry_password.get()
 
     if usuario == USUARIO_CORRECTO and password == PASSWORD_CORRECTO:
-        login_window.destroy()   # Cerramos login
-        abrir_sistema()          # Abrimos sistema
+        login_window.destroy()
+        abrir_sistema()
     else:
         messagebox.showerror("Error", "Usuario o contraseña incorrectos")
-
 
 login_window = tk.Tk()
 login_window.title("Inicio de Sesión")
@@ -74,7 +73,7 @@ def abrir_sistema():
 
     conexion.commit()
 
-    # -------- FUNCIONES --------
+    # ---------------- FUNCIONES ----------------
 
     def calcular_saldo():
         cursor.execute("""
@@ -83,7 +82,6 @@ def abrir_sistema():
             SUM(CASE WHEN tipo='Gasto' THEN monto ELSE 0 END)
             FROM transacciones
         """)
-
         resultado = cursor.fetchone()[0]
         if resultado is None:
             resultado = 0
@@ -129,7 +127,53 @@ def abrir_sistema():
         for registro in registros:
             tabla.insert("", tk.END, values=registro)
 
-    # -------- INTERFAZ --------
+    def consultar_por_tipo():
+        tipo = tipo_var.get()
+
+        for fila in tabla.get_children():
+            tabla.delete(fila)
+
+        cursor.execute("SELECT id, tipo, monto, descripcion, fecha FROM transacciones WHERE tipo = ?", (tipo,))
+        registros = cursor.fetchall()
+
+        for registro in registros:
+            tabla.insert("", tk.END, values=registro)
+
+    def eliminar_transaccion():
+        seleccion = tabla.selection()
+
+        if not seleccion:
+            messagebox.showwarning("Error", "Seleccione un registro para eliminar")
+            return
+
+        confirmar = messagebox.askyesno("Confirmar", "¿Eliminar transacción seleccionada?")
+        if confirmar:
+            item = tabla.item(seleccion)
+            id_transaccion = item["values"][0]
+
+            cursor.execute("DELETE FROM transacciones WHERE id = ?", (id_transaccion,))
+            conexion.commit()
+
+            mostrar_transacciones()
+            calcular_saldo()
+
+    def eliminar_todo():
+        confirmar = messagebox.askyesno(
+            "Confirmar eliminación",
+            "¿Seguro que deseas eliminar TODOS los registros?\nEsta acción no se puede deshacer."
+        )
+
+        if confirmar:
+            cursor.execute("DELETE FROM transacciones")
+            cursor.execute("DELETE FROM sqlite_sequence WHERE name='transacciones'")
+            conexion.commit()
+
+            mostrar_transacciones()
+            calcular_saldo()
+
+            messagebox.showinfo("Éxito", "Todos los registros fueron eliminados")
+
+    # ---------------- INTERFAZ ----------------
 
     style = ttk.Style()
     style.theme_use("clam")
@@ -140,6 +184,15 @@ def abrir_sistema():
                     rowheight=25,
                     fieldbackground="#2b2b2b")
 
+    style.configure("Treeview.Heading",
+                    background="#3a3a3a",
+                    foreground="white")
+
+    style.map("Treeview",
+              background=[("selected", "#4CAF50")])
+
+    # -------- FORMULARIO --------
+
     frame_form = tk.Frame(ventana, bg="#1e1e1e")
     frame_form.pack(fill="x", padx=20, pady=10)
 
@@ -148,42 +201,81 @@ def abrir_sistema():
                            font=("Arial", 18, "bold"),
                            fg="#4CAF50",
                            bg="#1e1e1e")
-    saldo_label.pack(pady=10)
+    saldo_label.grid(row=0, column=0, columnspan=4, pady=10)
 
     tipo_var = tk.StringVar(value="Ingreso")
 
+    tk.Label(frame_form, text="Tipo", fg="white", bg="#1e1e1e").grid(row=1, column=0)
+
     tk.Radiobutton(frame_form, text="Ingreso", variable=tipo_var,
                    value="Ingreso", bg="#1e1e1e", fg="white",
-                   selectcolor="#1e1e1e").pack()
+                   selectcolor="#1e1e1e").grid(row=1, column=1)
 
     tk.Radiobutton(frame_form, text="Gasto", variable=tipo_var,
                    value="Gasto", bg="#1e1e1e", fg="white",
-                   selectcolor="#1e1e1e").pack()
+                   selectcolor="#1e1e1e").grid(row=1, column=2)
 
+    tk.Label(frame_form, text="Monto", fg="white", bg="#1e1e1e").grid(row=2, column=0)
     monto_entry = tk.Entry(frame_form)
-    monto_entry.pack(pady=5)
+    monto_entry.grid(row=2, column=1)
 
-    descripcion_entry = tk.Entry(frame_form, width=40)
-    descripcion_entry.pack(pady=5)
+    tk.Label(frame_form, text="Descripción", fg="white", bg="#1e1e1e").grid(row=2, column=2)
+    descripcion_entry = tk.Entry(frame_form, width=30)
+    descripcion_entry.grid(row=2, column=3)
 
-    tk.Button(frame_form, text="Registrar",
+    # -------- BOTONES --------
+
+    frame_botones = tk.Frame(frame_form, bg="#1e1e1e")
+    frame_botones.grid(row=3, column=0, columnspan=4, pady=15)
+
+    tk.Button(frame_botones, text="Registrar",
               bg="#4CAF50", fg="white",
-              command=registrar_transaccion).pack(pady=5)
+              width=15, command=registrar_transaccion).grid(row=0, column=0, padx=5)
 
-    tabla = ttk.Treeview(ventana,
+    tk.Button(frame_botones, text="Mostrar Todas",
+              bg="#2196F3", fg="white",
+              width=15, command=mostrar_transacciones).grid(row=0, column=1, padx=5)
+
+    tk.Button(frame_botones, text="Consultar por Tipo",
+              bg="#9C27B0", fg="white",
+              width=18, command=consultar_por_tipo).grid(row=0, column=2, padx=5)
+
+    tk.Button(frame_botones, text="Eliminar Seleccionado",
+              bg="#f44336", fg="white",
+              width=20, command=eliminar_transaccion).grid(row=0, column=3, padx=5)
+
+    tk.Button(frame_botones, text="Eliminar Todo",
+              bg="#b71c1c", fg="white",
+              width=15, command=eliminar_todo).grid(row=0, column=4, padx=5)
+
+    # -------- TABLA --------
+
+    frame_tabla = tk.Frame(ventana, bg="#1e1e1e")
+    frame_tabla.pack(fill="both", expand=True, padx=20, pady=10)
+
+    tabla = ttk.Treeview(frame_tabla,
                          columns=("ID", "Tipo", "Monto", "Descripcion", "Fecha"),
                          show="headings")
 
-    for col in ("ID", "Tipo", "Monto", "Descripcion", "Fecha"):
-        tabla.heading(col, text=col)
+    tabla.heading("ID", text="ID")
+    tabla.heading("Tipo", text="Tipo")
+    tabla.heading("Monto", text="Monto")
+    tabla.heading("Descripcion", text="Descripción")
+    tabla.heading("Fecha", text="Fecha")
 
-    tabla.pack(fill="both", expand=True, padx=20, pady=10)
+    tabla.column("ID", width=50)
+    tabla.column("Tipo", width=100)
+    tabla.column("Monto", width=100)
+    tabla.column("Descripcion", width=300)
+    tabla.column("Fecha", width=200)
+
+    tabla.pack(fill="both", expand=True)
 
     mostrar_transacciones()
     calcular_saldo()
 
     ventana.mainloop()
+    conexion.close()
 
 
 login_window.mainloop()
-
