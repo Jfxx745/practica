@@ -10,6 +10,34 @@ PASSWORD_CORRECTO = "Javier12345"
 # LOGIN
 # ==========================
 
+def mostrar_login():
+    global login_window
+
+    login_window = tk.Tk()
+    login_window.title("Inicio de Sesión")
+    login_window.geometry("350x250")
+    login_window.configure(bg="#1e1e1e")
+
+    tk.Label(login_window, text="Inicio de Sesión",
+             font=("Arial", 16, "bold"),
+             fg="white", bg="#1e1e1e").pack(pady=15)
+
+    tk.Label(login_window, text="Usuario", fg="white", bg="#1e1e1e").pack()
+    global entry_usuario
+    entry_usuario = tk.Entry(login_window)
+    entry_usuario.pack(pady=5)
+
+    tk.Label(login_window, text="Contraseña", fg="white", bg="#1e1e1e").pack()
+    global entry_password
+    entry_password = tk.Entry(login_window, show="*")
+    entry_password.pack(pady=5)
+
+    tk.Button(login_window, text="Ingresar",
+              bg="#4CAF50", fg="white",
+              width=15, command=verificar_login).pack(pady=15)
+
+    login_window.mainloop()
+
 def verificar_login():
     usuario = entry_usuario.get()
     password = entry_password.get()
@@ -173,6 +201,10 @@ def abrir_sistema():
 
             messagebox.showinfo("Éxito", "Todos los registros fueron eliminados")
 
+    def cerrar_sesion():
+        ventana.destroy()   # Cierra el sistema
+        mostrar_login()     # Vuelve a abrir el login
+
     # ---------------- INTERFAZ ----------------
 
     style = ttk.Style()
@@ -247,6 +279,10 @@ def abrir_sistema():
     tk.Button(frame_botones, text="Eliminar Todo",
               bg="#b71c1c", fg="white",
               width=15, command=eliminar_todo).grid(row=0, column=4, padx=5)
+    
+    tk.Button(frame_botones, text="Cerrar Sesión",
+          bg="#ff9800", fg="white",
+          width=15, command=cerrar_sesion).grid(row=0, column=5, padx=5)
 
     # -------- TABLA --------
 
