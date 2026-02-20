@@ -3,6 +3,41 @@ from tkinter import messagebox, ttk
 import sqlite3
 from datetime import datetime
 
+
+USUARIO_CORRECTO = "Javier"
+PASSWORD_CORRECTO = "Javier12345"
+
+def verificar_login():
+    usuario = entry_usuario.get()
+    password = entry_password.get()
+
+    if usuario == USUARIO_CORRECTO and password == PASSWORD_CORRECTO:
+        login_window.destroy()
+        iniciar_sistema()
+    else:
+        messagebox.showerror("Error", "Usuario o contraseña incorrectos")
+
+login_window = tk.Tk()
+login_window.title("Inicio de Sesión")
+login_window.geometry("350x250")
+login_window.configure(bg="#1e1e1e")s
+
+tk.Label(login_window, text="Inicio de Sesión",
+         font=("Arial", 16, "bold"),
+         fg="white", bg="#1e1e1e").pack(pady=15)
+
+tk.Label(login_window, text="Usuario", fg="white", bg="#1e1e1e").pack()
+entry_usuario = tk.Entry(login_window)
+entry_usuario.pack(pady=5)
+
+tk.Label(login_window, text="Contraseña", fg="white", bg="#1e1e1e").pack()
+entry_password = tk.Entry(login_window, show="*")
+entry_password.pack(pady=5)
+
+tk.Button(login_window, text="Ingresar",
+          bg="#4CAF50", fg="white",
+          width=15, command=verificar_login).pack(pady=15)
+
 conexion = sqlite3.connect("finanzas.db")
 cursor = conexion.cursor()
 
@@ -223,4 +258,3 @@ calcular_saldo()
 ventana.mainloop()
 conexion.close()
 
-#primer intento de commit
